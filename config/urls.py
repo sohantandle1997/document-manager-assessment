@@ -20,6 +20,7 @@ urlpatterns = [
         SpectacularSwaggerView.as_view(url_name="api-schema"),
         name="api-docs",
     ),
+    path('file-manager/', include('propylon_document_manager.file_versions.urls'))
 ]
 
 if settings.DEBUG:
