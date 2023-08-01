@@ -16,6 +16,10 @@ import requests
 import base64
 import os
 import mimetypes
+import hashlib
+import json
+from propylon_document_manager.utils.utils import Utils
+from propylon_document_manager.file_versions.core.file_handler import FileUploadHandler
 
 
 class FileVersionViewSet(RetrieveModelMixin, ListModelMixin, GenericViewSet):
@@ -71,43 +75,112 @@ def say_hello(requests):
 #         return Response({'error': 'No file provided.'}, status=status.HTTP_400_BAD_REQUEST)
 
 
+# class FileUploadView(APIView):
+#     def post(self, request, *args, **kwargs):
+#         file_content = request.data.get('file-content')
+#         file_name = request.data.get('file-name')
+#         file_type = request.data.get('file-type', 'application/octet-stream')
+#         destination_url = request.data.get('destination-url', '')
+#
+#         if file_content and file_name and file_type:
+#             try:
+#                 # Decode base64 file content to binary
+#                 binary_data = base64.b64decode(file_content)
+#
+#                 # Calculate the content hash (unique identifier) for the file's content
+#                 content_hash = hashlib.sha256(binary_data).hexdigest()
+#
+#                 # Create the server path for the destination URL
+#                 base_server_path = '/Users/sohantandle/Documents/Personal/Jobs/Companies/Propylon/Assignment/document-manager-assessment/propylon_document_manager/file_versions/my_file_manager'
+#                 if not os.path.exists(base_server_path):
+#                     os.mkdir(base_server_path)
+#
+#                 server_path = os.path.join(base_server_path, destination_url)
+#                 print(server_path)
+#                 os.makedirs(server_path, exist_ok=True)
+#
+#                 file_path = os.path.join(server_path, file_name)
+#
+#                 # Save the file to the server's storage
+#                 with open(file_path, 'wb') as f:
+#                     f.write(binary_data)
+#
+#                 # Determine the file extension from the provided file type
+#                 file_extension = mimetypes.guess_extension(file_type)
+#                 if file_extension:
+#                     # Rename the file with the correct file extension
+#                     new_file_path = f"{file_path}{file_extension}"
+#                     os.rename(file_path, new_file_path)
+#
+#                 return Response({'message': 'File uploaded successfully.'}, status=status.HTTP_201_CREATED)
+#
+#             except Exception as e:
+#                 return Response({'error': 'Failed to upload the file.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#
+#         return Response({'error': 'Invalid request data.'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# class FileUploadView(APIView):
+#     def post(self, request, *args, **kwargs):
+#         file_content = request.data.get('file-content')
+#         file_type = request.data.get('file-type', 'application/octet-stream')
+#         destination_url = request.data.get('destination-url', '')
+#         file_name = request.data.get('file-name')
+#
+#         if file_content:
+#             try:
+#                 # Decode base64 file content to binary
+#                 binary_data = base64.b64decode(file_content)
+#
+#                 # Calculate the content hash (unique identifier) for the file's content
+#                 content_hash = hashlib.sha256(binary_data).hexdigest()
+#
+#                 # Get the file extension from the provided file type
+#                 file_extension = mimetypes.guess_extension(file_type)
+#
+#                 if not os.path.exists(BASE_SERVER_PATH):
+#                     os.mkdir(BASE_SERVER_PATH)
+#
+#                 # Create the server path for the destination URL using the content hash
+#                 server_path = os.path.join(BASE_SERVER_PATH, destination_url, file_name)
+#
+#                 # Create the nested folder structure (and any missing intermediate directories)
+#                 os.makedirs(server_path, exist_ok=True)
+#
+#                 # Get the latest version number for the file from the metadata
+#                 next_version = Utils.get_next_version(server_path)
+#
+#                 # Construct the file name using the content hash
+#                 hash_file_name = f"{content_hash}{file_extension}"
+#
+#                 # Save the file to the server's storage
+#                 file_path = os.path.join(server_path, hash_file_name)
+#                 with open(file_path, 'wb') as f:
+#                     f.write(binary_data)
+#
+#                 # Update the metadata with the new version number
+#                 Utils.update_metadata(server_path, content_hash, next_version)
+#
+#                 return Response({'message': 'File uploaded successfully.',
+#                                  'version': next_version}, status=status.HTTP_201_CREATED)
+#
+#             except Exception as e:
+#                 return Response({'error': 'Failed to upload the file.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#
+#         return Response({'error': 'Invalid request data.'}, status=status.HTTP_400_BAD_REQUEST)
+
 class FileUploadView(APIView):
     def post(self, request, *args, **kwargs):
         file_content = request.data.get('file-content')
-        file_name = request.data.get('file-name')
         file_type = request.data.get('file-type', 'application/octet-stream')
-        destination_url = request.data.get('destination-url', '')
+        target_path = request.data.get('destination-url', '')
+        file_name = request.data.get('file-name')
 
-        if file_content and file_name and file_type:
-            try:
-                # Decode base64 file content to binary
-                binary_data = base64.b64decode(file_content)
-
-                # Create the server path for the destination URL
-                base_server_path = '/Users/sohantandle/Documents/Personal/Jobs/Companies/Propylon/Assignment/document-manager-assessment/propylon_document_manager/file_versions/my_file_manager'
-                if not os.path.exists(base_server_path):
-                    os.mkdir(base_server_path)
-
-                server_path = os.path.join(base_server_path, destination_url)
-                print(server_path)
-                os.makedirs(server_path, exist_ok=True)
-
-                file_path = os.path.join(server_path, file_name)
-
-                # Save the file to the server's storage
-                with open(file_path, 'wb') as f:
-                    f.write(binary_data)
-
-                # Determine the file extension from the provided file type
-                file_extension = mimetypes.guess_extension(file_type)
-                if file_extension:
-                    # Rename the file with the correct file extension
-                    new_file_path = f"{file_path}{file_extension}"
-                    os.rename(file_path, new_file_path)
-
-                return Response({'message': 'File uploaded successfully.'}, status=status.HTTP_201_CREATED)
-
-            except Exception as e:
-                return Response({'error': 'Failed to upload the file.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
+        if file_content and file_name and file_type and target_path:
+            file_handler = FileUploadHandler(file_content, file_name, file_type, target_path)
+            is_successful = file_handler.upload_file()
+            if is_successful:
+                return Response({'message': 'File uploaded successfully.',
+                                 'version': file_handler.file_version}, status=status.HTTP_201_CREATED)
+            return Response({'error': 'Failed to upload the file.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         return Response({'error': 'Invalid request data.'}, status=status.HTTP_400_BAD_REQUEST)

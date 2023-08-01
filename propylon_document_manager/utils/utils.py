@@ -1,6 +1,7 @@
 import base64
 import os
 import mimetypes
+import json
 
 
 class Utils:
@@ -28,6 +29,32 @@ class Utils:
             request_data["file-type"] = file_type
 
         return request_data
+
+    @staticmethod
+    def update_metadata(server_path, content_hash, version):
+        metadata_path = os.path.join(server_path, 'metadata.json')
+        metadata = {}
+        if os.path.exists(metadata_path):
+            with open(metadata_path, 'r') as f:
+                metadata = json.load(f)
+
+        # file_metadata = metadata.get(file_name, {})
+        metadata[content_hash] = version
+
+        with open(metadata_path, 'w') as f:
+            json.dump(metadata, f)
+
+    @staticmethod
+    def get_next_version(server_path):
+        metadata_path = os.path.join(server_path, 'metadata.json')
+        metadata = {}
+        if os.path.exists(metadata_path):
+            with open(metadata_path, 'r') as f:
+                metadata = json.load(f)
+
+        max_version = max(metadata.values(), default=-1)
+        next_version = max_version + 1
+        return next_version
 
 
 file_upload_request = Utils.construct_file_upload_request(
