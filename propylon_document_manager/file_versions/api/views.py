@@ -19,7 +19,7 @@ import mimetypes
 import hashlib
 import json
 from propylon_document_manager.utils.utils import Utils
-from propylon_document_manager.file_versions.core.file_handler import FileUploadHandler
+from propylon_document_manager.file_versions.core.file_handler import FileUploadHandler, FileRetrieveHandler
 
 
 class FileVersionViewSet(RetrieveModelMixin, ListModelMixin, GenericViewSet):
@@ -180,7 +180,35 @@ class FileUploadView(APIView):
             file_handler = FileUploadHandler(file_content, file_name, file_type, target_path)
             is_successful = file_handler.upload_file()
             if is_successful:
-                return Response({'message': 'File uploaded successfully.',
+                return Response({'message': 'File uploaded successfully',
                                  'version': file_handler.file_version}, status=status.HTTP_201_CREATED)
-            return Response({'error': 'Failed to upload the file.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        return Response({'error': 'Invalid request data.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Failed to upload the file'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({'error': 'Invalid request data'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class FileRetrieveView(APIView):
+    def get(self, request, *args, **kwargs):
+        # Get parameters from the query string
+        source_path = request.GET.get('source-path')
+        file_version = int(request.GET.get('version', 0))
+
+        print(f'params: {file_version}, {source_path}')
+
+        if source_path and file_version is not None:
+
+            file_handler = FileRetrieveHandler(source_path, file_version)
+            is_successful = file_handler.retrieve_file()
+
+            if is_successful:
+                response = {
+                    'version': file_handler.file_version,
+                    'file-content': file_handler.file_content,
+                    'file-type': file_handler.file_type,
+                    'file-name': file_handler.file_name,
+                    'message': 'File retrieved successfully'
+                }
+                return Response(response, status=status.HTTP_200_OK)
+
+            return Response({'error': 'Failed to retrieve the file'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        return Response({'error': 'Invalid request data'}, status=status.HTTP_400_BAD_REQUEST)
