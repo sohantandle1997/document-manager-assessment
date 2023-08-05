@@ -3,24 +3,26 @@ import hashlib
 import mimetypes
 import os
 import json
+import datetime
 
-BASE_SERVER_PATH = '/Users/sohantandle/Documents/Personal/Jobs/Companies/Propylon/Assignment/document-manager-assessment/propylon_document_manager/file_versions/my_file_manager'
+BASE_SERVER_PATH = '/Users/sohantandle/Documents/Personal/Jobs/Companies/Propylon/Assignment/document-manager-assessment/propylon_document_manager/file_versions/user_repo'
 
 
 class FileHandler:
-    def __init__(self):
-        pass
+    def __init__(self, user):
+        self.user = user
+        self.user_repo_path = os.path.join(BASE_SERVER_PATH, self.user)
 
 
 class FileUploadHandler(FileHandler):
 
-    def __init__(self, file_content, file_name, file_type, target_path):
-        super().__init__()
+    def __init__(self, user, file_content, file_name, file_type, target_path):
+        super().__init__(user)
         self.target_path = target_path
         self.file_name = file_name
         self.file_type = file_type
         self.file_content = file_content
-        self.server_path = os.path.join(BASE_SERVER_PATH, self.target_path, self.file_name)
+        self.server_path = os.path.join(self.user_repo_path, self.target_path, self.file_name)
         self.metadata_path = os.path.join(self.server_path, 'metadata.json')
         self.metadata = {}
         self.read_metadata()
@@ -37,14 +39,11 @@ class FileUploadHandler(FileHandler):
             # Get the file extension from the provided file type
             file_extension = mimetypes.guess_extension(self.file_type)
 
-            if not os.path.exists(BASE_SERVER_PATH):
-                os.mkdir(BASE_SERVER_PATH)
-
             # Create the server path for the destination URL using the content hash
-            server_path = os.path.join(BASE_SERVER_PATH, self.target_path, self.file_name)
+            # server_path = os.path.join(self.server_path, self.file_name)
 
             # Create the nested folder structure (and any missing intermediate directories)
-            os.makedirs(server_path, exist_ok=True)
+            os.makedirs(self.server_path, exist_ok=True)
 
             # Get the latest version number for the file from the metadata
             self.generate_file_version(content_hash)
@@ -53,7 +52,7 @@ class FileUploadHandler(FileHandler):
             hash_file_name = f"{content_hash}{file_extension}"
 
             # Save the file to the server's storage
-            file_path = os.path.join(server_path, hash_file_name)
+            file_path = os.path.join(self.server_path, hash_file_name)
             with open(file_path, 'wb') as f:
                 f.write(binary_data)
 
@@ -98,11 +97,11 @@ class FileUploadHandler(FileHandler):
 
 
 class FileRetrieveHandler(FileHandler):
-    def __init__(self, file_path, file_version):
-        super().__init__()
+    def __init__(self, user, file_path, file_version):
+        super().__init__(user)
         self.file_path = file_path
         self.file_version = file_version
-        self.metadata_path = os.path.join(BASE_SERVER_PATH, self.file_path, 'metadata.json')
+        self.metadata_path = os.path.join(self.user_repo_path, self.file_path, 'metadata.json')
         self.metadata = {}
         self.read_metadata()
         self.file_type = None
@@ -117,6 +116,8 @@ class FileRetrieveHandler(FileHandler):
         try:
             hash_content = self.find_hash_by_version()
 
+            print(f'METAAA{self.metadata_path}')
+
             self.file_name = os.path.basename(self.file_path)
 
             self.file_type, _ = mimetypes.guess_type(self.file_name)
@@ -125,12 +126,14 @@ class FileRetrieveHandler(FileHandler):
 
             hash_file_name = f"{hash_content}{extension}"
 
-            server_file_path = os.path.join(BASE_SERVER_PATH, self.file_path, hash_file_name)
+            server_file_path = os.path.join(self.user_repo_path, self.file_path, hash_file_name)
 
             with open(server_file_path, 'rb') as file:
                 self.file_content = base64.b64encode(file.read()).decode('utf-8')
 
             return True
+        except FileNotFoundError:
+            raise
         except Exception as e:
             print(e)
             return False
@@ -145,8 +148,65 @@ class FileRetrieveHandler(FileHandler):
                 self.metadata = json.load(f)
 
     def find_hash_by_version(self):
+        """
+        Method to find the hash based on the given doc version
+        :return:
+        """
         for content_hash, hash_version in self.metadata.items():
             if int(hash_version) == self.file_version:
                 return content_hash
         return None
 
+
+class FileStructHandler(FileHandler):
+    def __init__(self, user):
+        super().__init__(user)
+
+    def retrieve_folder_structure(self, path):
+        try:
+            contents = os.listdir(path)
+            # files = [item for item in contents if os.path.isfile(os.path.join(path, item))]
+            folders = [item for item in contents if os.path.isdir(os.path.join(path, item))]
+
+            # response = {"path": path, "files": files, "folders": folders}
+            response = {}
+
+            for folder in folders:
+                folder_path = os.path.join(path, folder)
+                response[folder] = self.retrieve_folder_structure(folder_path)
+                if os.path.exists(os.path.join(folder_path, 'metadata.json')):
+                    metadata = self.read_metadata(os.path.join(folder_path, 'metadata.json'))
+                    file_type, _ = mimetypes.guess_type(folder)
+                    extension = mimetypes.guess_extension(file_type)
+                    for hash_content, version in metadata.items():
+                        response[folder][f'version-{version}'] = \
+                            self.get_last_modified(os.path.join(folder_path, f'{hash_content}{extension}'))
+
+            return response
+        except FileNotFoundError:
+            return None
+
+    @classmethod
+    def read_metadata(cls, path):
+        """
+        Method to read the metadata file
+        :return:
+        """
+        metadata = {}
+        if os.path.exists(path):
+            with open(path, 'r') as f:
+                metadata = json.load(f)
+        return metadata
+
+    @classmethod
+    def get_last_modified(cls, file_path):
+        try:
+            print(f'HASHHH PATHHH{file_path}')
+            mtime = os.path.getmtime(file_path)
+
+            last_modified = datetime.datetime.fromtimestamp(mtime)
+            formatted_last_modified = last_modified.strftime("%m-%d-%Y %H:%M:%S")
+
+            return formatted_last_modified
+        except FileNotFoundError:
+            return None

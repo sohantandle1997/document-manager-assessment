@@ -2,6 +2,7 @@ import base64
 import os
 import mimetypes
 import json
+from datetime import datetime
 
 
 class Utils:
@@ -56,9 +57,61 @@ class Utils:
         next_version = max_version + 1
         return next_version
 
+    @staticmethod
+    def list_files_and_folders_recursive(path):
+        try:
+            contents = os.listdir(path)
+            # files = [item for item in contents if os.path.isfile(os.path.join(path, item))]
+            folders = [item for item in contents if os.path.isdir(os.path.join(path, item))]
 
-file_upload_request = Utils.construct_file_upload_request(
-    '/Users/sohantandle/Documents/Personal/Jobs/DCU_LinkedIn_Tips.pdf',
-    '/Users/sohantandle/Documents/Personal/Jobs/Companies/Propylon/Assignment/file_manager')
-print(file_upload_request)
+            # response = {"path": path, "files": files, "folders": folders}
+            response = {}
+
+            for folder in folders:
+                folder_path = os.path.join(path, folder)
+                response[folder] = Utils.list_files_and_folders_recursive(folder_path)
+                if os.path.exists(os.path.join(folder_path, 'metadata.json')):
+                    metadata = Utils.read_metadata(os.path.join(folder_path, 'metadata.json'))
+                    for hash_content, version in metadata.items():
+                        response[folder][f'version-{version}'] = \
+                            Utils.get_last_modified(os.path.exists(os.path.join(folder_path, hash_content)))
+
+            return response
+        except FileNotFoundError:
+            return None
+
+    @staticmethod
+    def read_metadata(path):
+        """
+        Method to read the metadata file
+        :return:
+        """
+        metadata = {}
+        if os.path.exists(path):
+            with open(path, 'r') as f:
+                metadata = json.load(f)
+        return metadata
+
+    @staticmethod
+    def get_last_modified(file_path):
+        try:
+            print(file_path)
+            # Get the last modification time in seconds since the epoch
+            mtime = os.path.getmtime(file_path)
+
+            # Convert the timestamp to a human-readable format
+            last_modified = datetime.fromtimestamp(mtime)
+            formatted_last_modified = last_modified.strftime("%m-%d-%Y %H:%M:%S")
+
+            return formatted_last_modified
+        except FileNotFoundError:
+            return None
+
+res = Utils.list_files_and_folders_recursive('/Users/sohantandle/Documents/Personal/Jobs/Companies/Propylon/Assignment/document-manager-assessment/propylon_document_manager/file_versions/user_repo')
+print(res)
+
+
+
+#%%
+
 #%%

@@ -19,7 +19,8 @@ import mimetypes
 import hashlib
 import json
 from propylon_document_manager.utils.utils import Utils
-from propylon_document_manager.file_versions.core.file_handler import FileUploadHandler, FileRetrieveHandler
+from propylon_document_manager.file_versions.core.file_handler import FileUploadHandler, FileRetrieveHandler, \
+    FileStructHandler
 
 
 class FileVersionViewSet(RetrieveModelMixin, ListModelMixin, GenericViewSet):
@@ -171,13 +172,14 @@ def say_hello(requests):
 
 class FileUploadView(APIView):
     def post(self, request, *args, **kwargs):
+        user = str(request.user)
         file_content = request.data.get('file-content')
         file_type = request.data.get('file-type', 'application/octet-stream')
         target_path = request.data.get('destination-url', '')
         file_name = request.data.get('file-name')
 
         if file_content and file_name and file_type and target_path:
-            file_handler = FileUploadHandler(file_content, file_name, file_type, target_path)
+            file_handler = FileUploadHandler(user, file_content, file_name, file_type, target_path)
             is_successful = file_handler.upload_file()
             if is_successful:
                 return Response({'message': 'File uploaded successfully',
@@ -188,7 +190,7 @@ class FileUploadView(APIView):
 
 class FileRetrieveView(APIView):
     def get(self, request, *args, **kwargs):
-        # Get parameters from the query string
+        user = str(request.user)
         source_path = request.GET.get('source-path')
         file_version = int(request.GET.get('version', 0))
 
@@ -196,8 +198,11 @@ class FileRetrieveView(APIView):
 
         if source_path and file_version is not None:
 
-            file_handler = FileRetrieveHandler(source_path, file_version)
-            is_successful = file_handler.retrieve_file()
+            try:
+                file_handler = FileRetrieveHandler(user, source_path, file_version)
+                is_successful = file_handler.retrieve_file()
+            except FileNotFoundError:
+                return Response({'error': 'File not found. Please provide valid path'}, status=status.HTTP_404_NOT_FOUND)
 
             if is_successful:
                 response = {
@@ -212,3 +217,18 @@ class FileRetrieveView(APIView):
             return Response({'error': 'Failed to retrieve the file'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         return Response({'error': 'Invalid request data'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class FileStructView(APIView):
+    def get(self, request, *args, **kwargs):
+        # folder_path = request.data.get('url', '')
+        user = str(request.user)
+
+        file_handler = FileStructHandler(user)
+        file_structure = file_handler.retrieve_folder_structure(file_handler.user_repo_path)
+
+        if not file_structure:
+            return Response({'error': 'Failed to retrieve the file structure'},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response(file_structure, status=status.HTTP_200_OK)
+
