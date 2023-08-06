@@ -4,6 +4,8 @@ import builtins
 import mimetypes
 import typing
 import base64
+import datetime
+
 from propylon_document_manager.file_versions.core.file_handler import FileUploadHandler, FileRetrieveHandler, FileStructHandler
 
 
@@ -55,9 +57,16 @@ def mock_isdir(mocker):
 @pytest.fixture(scope="function")
 def mock_listdir(mocker):
     return mocker.patch.object(os, 'listdir', return_value=['abc', 'xyz'])
-# @pytest.fixture(scope="function")
-# def mock_read(mocker):
-#     return mocker.patch.object(typing, 'read')
+
+
+@pytest.fixture(scope="function")
+def mock_getmtime(mocker):
+    return mocker.patch.object(os.path, 'getmtime')
+
+
+@pytest.fixture(scope="function")
+def mock_getmtime_exception(mocker):
+    return mocker.patch.object(os.path, 'getmtime', side_effect=FileNotFoundError)
 
 
 @pytest.fixture(scope="class")
@@ -140,13 +149,21 @@ def file_struct_handler():
     return handler
 
 
-# @pytest.mark.usefixtures("file_struct_handler")
-# class TestFileStructHandler:
-#     @pytest.mark.usefixtures("mock_open", "mock_listdir", "mock_isdir")
-#     def test_retrieve_folder_structure(self, file_struct_handler):
-#         response = file_struct_handler.retrieve_folder_structure('/uploads/')
-#         # assert is_successful == True
+@pytest.mark.usefixtures("file_struct_handler")
+class TestFileStructHandler:
+    # @pytest.mark.usefixtures("mock_open", "mock_listdir", "mock_isdir")
+    # def test_retrieve_folder_structure(self, file_struct_handler):
+    #     response = file_struct_handler.retrieve_folder_structure('/uploads/')
+    #     # assert is_successful == True
 
+    @pytest.mark.usefixtures("mock_getmtime")
+    def test_get_last_modified(self, file_struct_handler):
+        file_struct_handler.get_last_modified('/uploads/my_doc.pdf')
+
+    @pytest.mark.usefixtures("mock_getmtime_exception")
+    def test_get_last_modified_exception(self, file_struct_handler):
+        res = file_struct_handler.get_last_modified('/uploads/my_doc.pdf')
+        assert res == None
 
 
 #%%
