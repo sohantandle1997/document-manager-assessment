@@ -5,7 +5,7 @@ import os
 import json
 import datetime
 
-BASE_SERVER_PATH = '/Users/sohantandle/Documents/Personal/Jobs/Companies/Propylon/Assignment/document-manager-assessment/propylon_document_manager/file_versions/user_repo'
+from propylon_document_manager.file_versions.apps import FileVersionsConfig
 
 
 class FileHandler:
@@ -15,7 +15,10 @@ class FileHandler:
         :param user:
         """
         self.user = user
-        self.user_repo_path = os.path.join(BASE_SERVER_PATH, self.user)
+        base_server_path = FileVersionsConfig.base_server_path
+        if not base_server_path:
+            base_server_path = os.getcwd()
+        self.user_repo_path = os.path.join(base_server_path, 'user_repo', self.user)
 
     @classmethod
     def read_metadata(cls, path):

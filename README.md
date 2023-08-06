@@ -49,6 +49,8 @@ To run the tests, check your test coverage, and generate an HTML coverage report
 
     $ pytest
 
+**Known Issue:** Change the app name from `file_versions` to `propylon_document_manager.file_versions` in `/document-manager-assessment/propylon_document_manager/file_versions/apps.py`
+
 ###  Exercising File Manager APIs
  
 To call the file manager's upload and retrieve file REST APIs, command-line python scripts are available:

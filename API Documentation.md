@@ -36,6 +36,13 @@ generated token. This token serves as your key to unlocking the APIs provided by
 [//]: # ()
 [//]: # (The base URL for all API endpoints is `https://api.example.com`.)
 
+## Configure Server Path
+
+To specify the storage location for user content, configure the `base_server_path` variable in the 
+`/document-manager-assessment/propylon_document_manager/file_versions/apps.py` file.
+
+If you leave `base_server_path` empty, the user data will be stored in the current working directory of the application.
+
 ## Endpoints
 
 ### Upload File
@@ -82,7 +89,7 @@ generated token. This token serves as your key to unlocking the APIs provided by
 ### Retrieve File
 
 - **HTTP Method:** `GET`
-- **Endpoint:** `/file-manager/ffile-retrieve`
+- **Endpoint:** `/file-manager/file-retrieve`
 - **Parameters:**
     - `source-path` (required): Path of the file on the server
     - `version` (required): Version of the file
@@ -128,3 +135,13 @@ generated token. This token serves as your key to unlocking the APIs provided by
   }
 }
 ```
+
+## APIs Coming Up Next
+
+### Delete File
+This upcoming API will provide users with the ability to remove files from the server, enhancing the 
+document management experience.
+
+### User Space Restriction
+This upcoming API will empower administrators to allocate specific memory limits for individual users, ensuring 
+efficient resource utilization and enhancing system performance.
