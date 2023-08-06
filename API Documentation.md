@@ -3,10 +3,10 @@
 ## Introduction
 
 Propylon Document Manager is a RESTful application designed to streamline file management processes. With its 
-intuitive interface, users can effortlessly upload, store, and retrieve files on the server. 
+ interface, users can effortlessly upload, store, and retrieve files on the server. 
 The application also empowers users by enabling the maintenance of multiple versions for each file, ensuring a 
 comprehensive history of document updates. Propylon Document Manager simplifies document management while promoting 
-organized collaboration and efficient file tracking."
+organized collaboration and efficient file tracking.
 
 
 ## Authentication
