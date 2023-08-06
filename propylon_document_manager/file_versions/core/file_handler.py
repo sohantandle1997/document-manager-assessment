@@ -53,7 +53,7 @@ class FileUploadHandler(FileHandler):
         :param target_path:
         """
         super().__init__(user)
-        self.target_path = target_path
+        self.target_path = target_path.lstrip("/")
         self.file_name = file_name
         self.file_type = file_type
         self.file_content = file_content
@@ -121,7 +121,7 @@ class FileRetrieveHandler(FileHandler):
         :param file_version:
         """
         super().__init__(user)
-        self.file_path = file_path
+        self.file_path = file_path.lstrip("/")
         self.file_version = file_version
         _metadata_path = os.path.join(self.user_repo_path, self.file_path, 'metadata.json')
         self.metadata = self.read_metadata(_metadata_path)
