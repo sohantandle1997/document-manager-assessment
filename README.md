@@ -48,3 +48,24 @@ To run the tests, check your test coverage, and generate an HTML coverage report
 #### Running tests with pytest
 
     $ pytest
+
+###  Exercising File Manager APIs
+ 
+To call the file manager's upload and retrieve file REST APIs, command-line python scripts are available:
+
+**Note:** Change the directory `cd /document-manager-assessment/propylon_document_manager/file_versions/client`
+
+#### File Upload API
+To upload a file on to the server
+
+    $ python file_upload.py --token='1709f4dc38263335751f086f217d728c585a0814' --target-path='/docs/' --source-path='/Users/sohantandle/Docs/my_doc.pdf'
+
+#### File Retrieve API
+To retrieve a file from the server
+
+    $ python file_retrieve.py --token='1709f4dc38263335751f086f217d728c585a0814' --source-path='/docs/my_doc.pdf' --version=0 --target-path='/Users/sohantandle/retrieved'
+
+#### File Structure API
+To view the file and folder structure on the server
+
+    $ python view_files.py --token='1709f4dc38263335751f086f217d728c585a0814'
